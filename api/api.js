@@ -6,7 +6,7 @@ import axios from 'axios';
 
 // Crear instancia de Axios
 const apiClient = axios.create({
-  baseURL: 'http://localhost:3000', // Dirección base de la API
+  baseURL: 'http://localhost:3001', // Dirección base de la API
   timeout: 10000, // Tiempo de espera en milisegundos
   headers: {
     'Content-Type': 'application/json', // Encabezado común para JSON
