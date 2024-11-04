@@ -6,6 +6,7 @@ const PageVendedor = ({ role, user }) => {
   const [sucursales, setSucursales] = useState([]); // Nuevo estado para sucursales
   const [catalogo, setCatalogo] = useState([]); // Nuevo estado para el catálogo
   const [inventario, setInventario] = useState([]); // Nuevo estado para el inventario
+  const [ventas, setVentas] = useState([]); // Nuevo estado para las ventas
 
   const [sucursalSeleccionada, setSucursalSeleccionada] = useState(null);
 
@@ -29,6 +30,16 @@ const PageVendedor = ({ role, user }) => {
       setCatalogo(response.data); // Almacena los datos en el estado
     } catch (error) {
       console.error("Error fetching catalogo:", error);
+    }
+  };
+
+  const getVentas = async () => {
+    try {
+      const response = await apiClient.get("/ventas");
+      console.log(response.data)
+      setVentas(response.data); // Almacena los datos en el estado
+    } catch (error) {
+      console.error("Error fetching ventas:", error);
     }
   };
 
@@ -82,22 +93,62 @@ const PageVendedor = ({ role, user }) => {
   };
 
   const handleCrearVenta = async () => {
+
+    if(productoSeleccionado.length === 0) {
+      alert("No hay productos seleccionados")
+      return
+    }
+
+    if(!sucursalSeleccionada) {
+      alert("Seleccione una sucursal")
+      return
+    }
+
+    if(!cedula) {
+      alert("Ingrese la cédula del cliente")
+      return
+    }
+
+
+
     console.log("crear venta")
     console.log(productoSeleccionado)
-  //   let obj = {
-  //     fecha: `${new Date()}`,
-  //     tipoventa: "VENTA_EN_SUCURSAL",
-  //     totalPagado: productoSeleccionado.reduce((acc, item) => acc + item.precio, 0),
-  //     vendedorId: user._id,
-  //     clienteId: ,
-  //     sucuarsalId: sucursalSeleccionada,
-  //   }
+    const resp = await apiClient.get(`/clientes/cedula/${cedula}`)
+    console.log(resp.data)
+    let clienteId = resp.data._id
+    let obj = {
+      fecha: `${new Date()}`,
+      tipoVenta: "VENTA_EN_SUCURSAL",
+      totalPagado: productoSeleccionado.reduce((acc, item) => acc + item.precio, 0),
+      vendedorId: user._id,
+      clienteId: clienteId,
+      sucursalId: sucursalSeleccionada,
+    }
+
+    const response = await apiClient.post('/ventas', obj)
+    console.log(response.data)
+    const ventaId = response.data._id
+
+    productoSeleccionado.forEach(async (producto) => {
+      let obj = {
+        ventaId: ventaId,
+        inventarioCatalogoId: producto._id,
+        subTotal: producto.precio,
+        cantidad: 1,
+      }
+      const response = await apiClient.post('/sub-ventas', obj)
+      console.log(response.data)
+      
+    })
+
+    alert("Venta realizada con éxito")
   }
   
 
   useEffect(() => {
     getSucursales();
     getCatalogo();
+    getVentas();
   }, []);
 
   // console.log("sucursales", sucursales);
@@ -162,6 +213,16 @@ const PageVendedor = ({ role, user }) => {
         </div>
         <div>
           <h2>Listado de ventas</h2>
+          {
+            ventas.map((venta) => (
+              <div key={venta._id} className="venta p-4" style={{border: '2px solid gray', borderRadius: '10px', width: '500px', marginBottom: '12px'}}>
+                <p>Código de venta: {venta._id}</p>
+                <p>Fecha: {venta.fecha}</p>
+                <p>Total: {venta.totalPagado}</p>
+                <p>Cliente: {venta.clienteId}</p>
+              </div>
+            ))
+          }
         </div>
       </div>
     </div>

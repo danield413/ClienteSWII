@@ -15,6 +15,6 @@
 .grid-ventas {
   display: grid;
   grid-template-columns: 40% 60%;
-  height: 80vh;
+  min-height: 80vh;
   width: 100vw;
 }
