@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import apiClient from "../../api/api";
 import { Button, Form } from "react-bootstrap"
 
-const PageVendedor = ({ role, user }) => {
+const PageVendedor = ({ role, user, setrole, setUserLogged }) => {
   const [sucursales, setSucursales] = useState([]); // Nuevo estado para sucursales
   const [catalogo, setCatalogo] = useState([]); // Nuevo estado para el catálogo
   const [inventario, setInventario] = useState([]); // Nuevo estado para el inventario
@@ -11,7 +11,7 @@ const PageVendedor = ({ role, user }) => {
   const [sucursalSeleccionada, setSucursalSeleccionada] = useState(null);
 
    //* formulario
-   const [cedula, setCedula] = useState('')
+   const [cedula, setCedula] = useState('1054479437')
    const [cantidad, setCantidad] = useState(1)
    const [productoSeleccionado, setProductoSeleccionado] = useState([])
 
@@ -33,9 +33,9 @@ const PageVendedor = ({ role, user }) => {
     }
   };
 
-  const getVentas = async () => {
+  const getVentas = async (idSucursal) => {
     try {
-      const response = await apiClient.get("/ventas");
+      const response = await apiClient.get(`/sucursals/${idSucursal}/ventas`);
       console.log(response.data)
       setVentas(response.data); // Almacena los datos en el estado
     } catch (error) {
@@ -59,6 +59,8 @@ const PageVendedor = ({ role, user }) => {
       const response1 = await apiClient.get(`/sucursals/${sucursalId}/inventarios`);
       const inventario = response1.data[0]
 
+      console.log(inventario)
+
       const response = await apiClient.get(`/inventario-catalogos`);
       const idInventario = inventario._id
       // console.log(response.data)
@@ -68,6 +70,7 @@ const PageVendedor = ({ role, user }) => {
       
       const nuevoCatalogo = []
       catalogoInventario.forEach(item => {
+        console.log("ITEM", item)
         const producto = catalogo.find((prod) => prod._id === item.catalogoId)
         if (!producto) {
           return;
@@ -76,7 +79,8 @@ const PageVendedor = ({ role, user }) => {
           ...producto,
           catalogoId: item.catalogoId,
           inventarioId: item.inventarioId,
-          cantidad: item.cantidad
+          cantidad: item.cantidad,
+          catalogoInventarioId: item._id
         })
       })
 
@@ -89,8 +93,18 @@ const PageVendedor = ({ role, user }) => {
   }
 
   const handleAgregarProducto = (nuevoProducto) => {
+    // console.log("producto", nuevoProducto)
+    if(productoSeleccionado.find((item) => item._id === nuevoProducto._id)) {
+      alert("Producto ya seleccionado")
+      return
+    }
     setProductoSeleccionado((prevProductos) => [...prevProductos, nuevoProducto]);
   };
+
+  const getClienteNombre = async (id) => {
+    const resp = await apiClient.get(`/clientes/${id}`)
+    return resp.data.nombre
+  }
 
   const handleCrearVenta = async () => {
 
@@ -111,10 +125,10 @@ const PageVendedor = ({ role, user }) => {
 
 
 
-    console.log("crear venta")
-    console.log(productoSeleccionado)
+    // console.log("crear venta")
+    // console.log(productoSeleccionado)
     const resp = await apiClient.get(`/clientes/cedula/${cedula}`)
-    console.log(resp.data)
+    // console.log(resp.data)
     let clienteId = resp.data._id
     let obj = {
       fecha: `${new Date()}`,
@@ -129,38 +143,48 @@ const PageVendedor = ({ role, user }) => {
     console.log(response.data)
     const ventaId = response.data._id
 
+    console.log("productos seleccionados")
     productoSeleccionado.forEach(async (producto) => {
+      console.log(producto)
       let obj = {
         ventaId: ventaId,
-        inventarioCatalogoId: producto._id,
         subTotal: producto.precio,
         cantidad: 1,
+        inventarioCatalogoId: producto.catalogoInventarioId
       }
-      const response = await apiClient.post('/sub-ventas', obj)
-      console.log(response.data)
+     
+      try {
+        console.log(obj)
+        const response = await apiClient.post('/sub-ventas', obj)
+        console.log(response.data)
+      } catch(e) {
+        console.log(e)
+      }
       
     })
 
     alert("Venta realizada con éxito")
+  }
+
+  const handleLogout = () => {
+    console.log("cerrar sesión")
+
+    setUserLogged(null)
+    setrole('')
   }
   
 
   useEffect(() => {
     getSucursales();
     getCatalogo();
-    getVentas();
   }, []);
 
-  // console.log("sucursales", sucursales);
-  // console.log("catalogo", catalogo);
-  // console.log("inventario", inventario);
-
-  console.log("productoSeleccionado", productoSeleccionado)
 
   return (
     <div>
-      <div className="px-4">
-      <h4>Seleccione su sucursal</h4>
+      <div className="px-4 py-2 d-flex justify-content-between">
+        <div>
+        <h4>Seleccione su sucursal</h4>
         <select
           className="form-select"
           style={{ width: "300px" }}
@@ -169,6 +193,10 @@ const PageVendedor = ({ role, user }) => {
             setSucursalSeleccionada(e.target.value)
             // getInventario(e.target.value)
             getCatalogoInventario(e.target.value)
+            getVentas(e.target.value)
+
+            setProductoSeleccionado([])
+            setInventario([])
           }} 
         >
           <option value="">Seleccione una sucursal</option>
@@ -178,6 +206,12 @@ const PageVendedor = ({ role, user }) => {
             </option>
           ))}
         </select>
+        </div>
+        <div>
+          <Button variant="success mx-2" size="sm" style={{marginTop: '20px'}}
+            onClick={handleLogout}
+          >Cerrar sesión</Button>
+        </div>
       </div>
 
       <hr />
@@ -202,7 +236,7 @@ const PageVendedor = ({ role, user }) => {
               <p>Cantidad seleccionada: {cantidad}</p>
               <Button variant="success" size="sm" 
                 onClick={() => handleAgregarProducto(producto)}
-              >agregar</Button>
+              >Agregar</Button>
             </div>
           ))}
           <p className="my-2">Total: {productoSeleccionado.reduce((acc, item) => acc + item.precio, 0)}</p>
@@ -217,9 +251,9 @@ const PageVendedor = ({ role, user }) => {
             ventas.map((venta) => (
               <div key={venta._id} className="venta p-4" style={{border: '2px solid gray', borderRadius: '10px', width: '500px', marginBottom: '12px'}}>
                 <p>Código de venta: {venta._id}</p>
-                <p>Fecha: {venta.fecha}</p>
+                <p>Fecha: {new Date(venta.fecha).toLocaleDateString("es-ES")}</p>
                 <p>Total: {venta.totalPagado}</p>
-                <p>Cliente: {venta.clienteId}</p>
+                <Button variant="success" size="sm">Ver detalles</Button>
               </div>
             ))
           }

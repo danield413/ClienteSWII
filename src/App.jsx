@@ -55,7 +55,7 @@ function App() {
           userLogged.role === 'ADMINISTRADOR' ? (
             <PageAdmin role={userLogged.role} user={userLogged} />
           ) : (
-            <PageVendedor role={userLogged.role} user={userLogged} />
+            <PageVendedor role={userLogged.role} user={userLogged} setRole={setRole} setUserLogged={setUserLogged}/>
           )
         )
       }
