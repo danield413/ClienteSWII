@@ -13,8 +13,8 @@ function App() {
     token: ''
   });
 
-  const [correo, setCorreo] = useState('lucas@gmail.com');
-  const [clave, setClave] = useState('lucas123');
+  const [correo, setCorreo] = useState('daniel@gmail.com');
+  const [clave, setClave] = useState('12345678');
   const [role, setRole] = useState('');
   const [userLogged, setUserLogged] = useState(null);
 
@@ -46,14 +46,12 @@ function App() {
     setUserLogged({...resp.data, role: 'ADMINISTRADOR'});
   }
 
-  console.log(role)
-
   return (
     <div>
       {
         JSON.stringify(userLogged) !== 'null' && (
           userLogged.role === 'ADMINISTRADOR' ? (
-            <PageAdmin role={userLogged.role} user={userLogged} />
+            <PageAdmin role={userLogged.role} user={userLogged}  setUserLogged={setUserLogged}/>
           ) : (
             <PageVendedor role={userLogged.role} user={userLogged} setRole={setRole} setUserLogged={setUserLogged}/>
           )
