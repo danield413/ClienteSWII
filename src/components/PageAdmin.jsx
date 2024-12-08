@@ -12,6 +12,7 @@ import {
   Bar,
   Legend,
 } from "recharts";
+import Swal from "sweetalert2"
 
 const PageAdmin = ({ role, user, setUserLogged }) => {
   const [productosBajoStock, setProductosBajoStock] = useState([]);
@@ -175,6 +176,43 @@ const PageAdmin = ({ role, user, setUserLogged }) => {
 
   };
 
+  const handleProveedor = async (producto) => {
+    console.log(producto)
+
+    const idProveedor = '6755a699e0097f8d830a65d4';
+
+    const info = {
+      fecha: new Date(),
+      proveedorId: idProveedor
+    }
+
+      try {
+        const response = await apiClient.post(`/pedidos`, info);
+        if (response.status === 200) {
+         
+          const inf = {
+            cantidad: 10,
+            inventarioCatalogoId: producto._id,
+            pedidoId: response.data._id
+          }
+
+          const response2 = await apiClient.post(`/producto-pedidos`, inf);
+
+          if (response2.status === 200) {
+            Swal.fire({
+              title: 'Pedido realizado',
+              text: 'Se ha realizado el pedido al proveedor',
+              icon: 'success',
+              confirmButtonText: 'Ok'
+            })
+          }
+
+        }
+      } catch (error) {
+        console.error("Error fetching catalogo:", error);
+      }
+  }
+
   useEffect(() => {
     getProductosBajoStock();
     getVentas();
@@ -221,8 +259,18 @@ const PageAdmin = ({ role, user, setUserLogged }) => {
         {productosBajoStock.length > 0 ? (
           <div>
             {productosBajoStock.map((producto) => (
-              <div key={producto._id} className="alert alert-warning">
+              <div key={producto._id} className="alert alert-warning" style={{
+                display: 'flex',
+                justifyContent: 'space-between'
+              }}>
+                <div>
                 {producto.nombre} | Stock: {producto.stock}
+                </div>
+                <div>
+                <button
+                  onClick={() => handleProveedor(producto)}
+                >Solicitar al proveedor</button>
+                </div>
               </div>
             ))}
           </div>
